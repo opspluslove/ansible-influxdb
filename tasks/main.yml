@@ -1,0 +1,39 @@
+---
+- name: Download influxdb deb package
+  get_url:
+    url: "{{ influxdb_deb_url }}"
+    dest: "/tmp/influxdb_{{ influxdb_version }}.deb"
+
+- name: Install influxdb package
+  apt: deb="/tmp/influxdb_{{ influxdb_version }}.deb"
+
+- name: Copy influxdb config
+  template:
+    src: influxdb.conf
+    dest: /etc/influxdb/influxdb.conf
+    owner: root
+    group: root
+    mode: 0644
+  notify: restart influxdb
+
+- name: Ensure influxdb is started and enabled
+  service: name=influxdb state=started enabled=yes
+
+- name: Create databases
+  command: influx -execute "create database {{ item.name }}"
+  with_items: "{{ influxdb_dbs }}"
+  when: item
+  register: command_result
+  failed_when: "(command_result.stdout_lines|length > 1) and (command_result.stdout_lines[0] != 'ERR: database already exists')"
+
+- name: Create users
+  command: influx -execute "create user {{ item.user }} with password '{{ item.password }}' "
+  with_items: "{{ influxdb_dbs }}"
+  when: item.user is defined
+  register: command_result
+  failed_when: "(command_result.stdout_lines|length > 1) and (command_result.stdout_lines[0] != 'ERR: user already exists')"
+
+- name: Restrict access to db user
+  command: influx -execute "grant all on {{ item.name }} to {{ item.user }}"
+  with_items: "{{ influxdb_dbs }}"
+  when: item.user is defined

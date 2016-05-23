@@ -1,0 +1,10 @@
+---
+influxdb_version: 0.10.3-1
+influxdb_deb_checksum: "md5:96244557d9bb7485ddc9d084ff7ce783"
+influxdb_deb_url: "https://dl.influxdata.com/influxdb/releases/influxdb_{{ influxdb_version }}_amd64.deb"
+influxdb_dbs:
+  # Example:
+  # - { name: my_db, user: my_db_user, password: my_db_user_password }
+  - null
+influxdb_host: localhost
+influxdb_port: 8086
